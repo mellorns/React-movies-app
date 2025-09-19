@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container } from 'react-bootstrap';
 import SearchForm from './../components/SearchForm';
@@ -9,20 +9,24 @@ import { toast, ToastContainer } from 'react-toastify';
 import useStorage from './../hooks/useStorage'
 import { createContext } from 'react';
 import CustomPagination from '../components/customPagination';
+import { useCommonStore } from '../store';
 
 export const TypeContext = createContext()
 
 function App() {
 
-    const [movieList, setMovieList] = useState([])
-    const [page, setPage] = useState(1)
-    const [totalPages, setTotalPages] = useState(0)
-    const [totalItems, setTotalItems] = useState(0)
-    const [inProgress, setInProgress] = useState(false)
-    const [type, setType] = useState('')
-    const [search, setSearch] = useState('')
+    const state = useCommonStore()
 
-    const { getItem, setItem } = useStorage()
+    const [movieList, setMovieList] = useState(state.moviesList)
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(state.totalPages)
+    const [totalItems, setTotalItems] = useState(state.totalResults)
+    const [inProgress, setInProgress] = useState(false)
+    const [type, setType] = useState(state.searchQuery)
+    const [search, setSearch] = useState(state.type)
+
+    const { getStorageItem, setStorageItem } = useStorage()
+
 
 
     const searchHandler = (params) => {
@@ -37,18 +41,22 @@ function App() {
     }
 
     const searchMovie = async (search, type, page) => {
-    
+
 
         setInProgress(true)
 
-        const storeKey = search.replaceAll(' ', '_') + '_' + type + '_' + page
+        const storeKey = search.replaceAll(' ', '-') + '_' + type + '_' + page
+        const cashedList = getStorageItem(storeKey, null, 'session')
 
-        const cashedList = getItem(storeKey)
 
         if (cashedList) {
             setMovieList(cashedList.results)
             setTotalItems(cashedList.total_results)
             setTotalPages(cashedList.total_pages)
+
+            state.setMoviesList(cashedList.results)
+            state.setTotalPages(cashedList.total_pages)
+            state.setTotalResults(cashedList.total_results)
             setInProgress(false)
             return
         }
@@ -69,10 +77,15 @@ function App() {
             const response = await fetch(url, options)
             if (response.ok) {
                 const data = await response.json()
-                setItem(storeKey, data)
+                data.total_results && setStorageItem(storeKey, data, 'session')
+                data.total_results && setStorageItem('storeKey', storeKey, 'session')
                 setMovieList(data.results)
                 setTotalItems(data.total_results)
                 setTotalPages(data.total_pages)
+
+                state.setMoviesList(data.results)
+                state.setTotalPages(data.total_pages)
+                state.setTotalResults(data.total_results)
             } else {
                 throw new Error(response.status)
             }
@@ -84,6 +97,33 @@ function App() {
             setInProgress(false)
         }
     }
+
+
+
+    function storedSearch() {
+
+        const storeKey = getStorageItem('storeKey', null, 'session')
+
+        if (storeKey) {
+            const cashedList = getStorageItem(storeKey, null, 'session')
+            if (cashedList) {
+                setMovieList(cashedList.results)
+                setTotalItems(cashedList.total_results)
+                setTotalPages(cashedList.total_pages)
+                setInProgress(false)
+                const [search, type, page] = storeKey.split('_')
+                setType(type)
+                setSearch(search)
+                setPage(page)
+
+                return
+            }
+        }
+    }
+
+    useEffect(() => {
+        storedSearch()
+    }, [])
 
     return (
         <>

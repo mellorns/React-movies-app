@@ -3,7 +3,6 @@ import Pagination from 'react-bootstrap/Pagination';
 export default function CustomPagination({ total, page, onPageChange }) {
 
 
-
     // const PagesList = (currentPage, totalPages) => {
     //     const range = []
     //     for (let i = 1; i <= totalPages; i++) {

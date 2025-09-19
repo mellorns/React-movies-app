@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { toast } from "react-toastify";
+import { useCommonStore } from "../store";
 
 export default function SearchForm(props) {
 
-    const [search, setSearch] = useState('')
-    const [type, setType] = useState("movie")
+    const { searchQuery, searchType, setSearchQuery, setSearchType } = useCommonStore()
+    const [search, setSearch] = useState(searchQuery)
+    const [type, setType] = useState(searchType)
 
     function submitHandler(e) {
         e.preventDefault()
 
         const searchString = search.trim().toLowerCase()
-        if(searchString === '') return toast.warning("Enter movie name please")
-        props.onSearch({search: searchString, type})
+        if (searchString === '') return toast.warning("Enter movie name please")
+        setSearchQuery(searchString)
+        setSearchType(type)
+        props.onSearch({ search: searchString, type })
     }
 
     return (

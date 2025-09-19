@@ -23,10 +23,6 @@ export default function DetailPage() {
             const response = await fetch(url, options)
             if (response.ok) {
                 const data = await response.json()
-
-                console.log(data);
-                
-              
                 setItem(data)
             } else {
                 throw new Error(response.status)
